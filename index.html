@@ -3,22 +3,95 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Love Chat</title>
+<title>Love Chat - شات الحب</title>
 <style>
-*{margin:0;padding:0;box-sizing:border-box;font-family:system-ui}
-body{background:linear-gradient(135deg,#e0f7fa,#4dd0e1);min-height:100vh;display:flex;align-items:center;justify-content:center}
-.card{background:white;width:95%;max-width:420px;border-radius:20px;padding:25px;box-shadow:0 10px 30px rgba(0,0,0,.15)}
-h1{text-align:center;color:#0097a7;margin-bottom:20px}
-input{width:100%;padding:14px;border:2px solid #b2ebf2;border-radius:12px;margin-bottom:12px;outline:none;font-size:16px}
-button{width:100%;padding:14px;background:#00acc1;color:white;border:none;border-radius:12px;font-size:17px;font-weight:bold}
-#chatScreen{display:none;height:100vh;width:100%;background:#e0f7fa}
+*{margin:0;padding:0;box-sizing:border-box;font-family:sans-serif}
+body{background:linear-gradient(135deg,#0f766e,#06b6d4,#22d3ee);min-height:100vh;display:flex;justify-content:center;align-items:center;padding:15px}
+.chat-box{background:white;width:100%;max-width:450px;height:90vh;border-radius:25px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,0.3)}
+.header{background:linear-gradient(90deg,#0f766e,#06b6d4);color:white;padding:18px;text-align:center;font-size:22px;font-weight:bold}
+#messages{flex:1;overflow-y:auto;padding:15px;display:flex;flex-direction:column;gap:10px;background:#f0fdfa}
+.msg{max-width:75%;padding:12px 15px;border-radius:18px;word-break:break-word;animation:pop 0.3s}
+.me{align-self:flex-end;background:linear-gradient(90deg,#0f766e,#06b6d4);color:white;border-bottom-right-radius:5px}
+.other{align-self:flex-start;background:white;border:1px solid #ccfbf1;color:#134e4a;border-bottom-left-radius:5px;box-shadow:0 2px 5px rgba(0,0,0,0.05)}
+.name{font-size:11px;opacity:0.7;margin-bottom:4px;font-weight:bold}
+.input-area{display:flex;padding:12px;gap:10px;background:white;border-top:1px solid #ccfbf1}
+#msgInput{flex:1;padding:12px 18px;border:2px solid #ccfbf1;border-radius:25px;outline:none;font-size:16px}
+#msgInput:focus{border-color:#06b6d4}
+button{background:linear-gradient(90deg,#0f766e,#06b6d4);color:white;border:none;padding:12px 22px;border-radius:25px;font-weight:bold;cursor:pointer}
+@keyframes pop{from{transform:scale(0.8);opacity:0}to{transform:scale(1);opacity:1}}
+#login{position:fixed;inset:0;background:rgba(0,0,0,0.5);display:flex;justify-content:center;align-items:center;z-index:10}
+.login-card{background:white;padding:30px;border-radius:20px;width:90%;max-width:350px;text-align:center}
+.login-card input{width:100%;padding:12px;margin:15px 0;border:2px solid #ccfbf1;border-radius:12px;font-size:16px}
 </style>
 </head>
 <body>
-<div class="card" id="login">
-<h1>💙 Love Chat</h1>
-<input id="nick" placeholder="الاسم">
-<button onclick="document.getElementById('login').style.display='none';document.body.innerHTML='<h1 style=text-align:center;margin-top:50% >مرحبا '+document.getElementById('nick').value+'</h1>'">دخول</button>
+<div id="login">
+  <div class="login-card">
+    <h2 style="color:#0f766e">💚 مرحبا في Love Chat</h2>
+    <p>كتب سميتك باش تدخل</p>
+    <input id="nameInput" placeholder="سميتك...">
+    <button onclick="enterChat()" style="width:100%">دخول ❤️</button>
+  </div>
 </div>
+<div class="chat-box">
+  <div class="header">💬 Love Chat - شات حقيقي</div>
+  <div id="messages"></div>
+  <div class="input-area">
+    <input id="msgInput" placeholder="كتب رسالة..." onkeypress="if(event.key==='Enter')sendMsg()">
+    <button onclick="sendMsg()">إرسال</button>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBdPT-VStQgY6HfOwaa9w4AT1HlGmYfaso",
+  authDomain: "chat-love-14788.firebaseapp.com",
+  projectId: "chat-love-14788",
+  storageBucket: "chat-love-14788.firebasestorage.app",
+  messagingSenderId: "663137842500",
+  appId: "1:663137842500:web:4f033c5be55b029a271311",
+  measurementId: "G-VNWS7DNCP7"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+let myName = "";
+
+window.enterChat = ()=>{
+  const n = document.getElementById('nameInput').value.trim();
+  if(!n) return alert('كتب سميتك!');
+  myName = n;
+  document.getElementById('login').style.display='none';
+  localStorage.setItem('chatName', myName);
+}
+
+const saved = localStorage.getItem('chatName');
+if(saved){ myName = saved; document.getElementById('login').style.display='none'; }
+
+const q = query(collection(db, "messages"), orderBy("time","asc"));
+onSnapshot(q, (snap)=>{
+  const box = document.getElementById('messages');
+  box.innerHTML = "";
+  snap.forEach(doc=>{
+    const d = doc.data();
+    const div = document.createElement('div');
+    div.className = 'msg ' + (d.name===myName?'me':'other');
+    div.innerHTML = `<div class="name">${d.name}</div>${d.text}`;
+    box.appendChild(div);
+  });
+  box.scrollTop = box.scrollHeight;
+});
+
+window.sendMsg = async ()=>{
+  const inp = document.getElementById('msgInput');
+  const text = inp.value.trim();
+  if(!text) return;
+  inp.value="";
+  await addDoc(collection(db,"messages"),{name:myName,text:text,time:serverTimestamp()});
+}
+</script>
 </body>
 </html>
