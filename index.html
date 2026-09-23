@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Love Chat</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:system-ui}
+body{background:linear-gradient(135deg,#e0f7fa,#4dd0e1);min-height:100vh;display:flex;align-items:center;justify-content:center}
+.card{background:white;width:95%;max-width:420px;border-radius:20px;padding:25px;box-shadow:0 10px 30px rgba(0,0,0,.15)}
+h1{text-align:center;color:#0097a7;margin-bottom:20px}
+input{width:100%;padding:14px;border:2px solid #b2ebf2;border-radius:12px;margin-bottom:12px;outline:none;font-size:16px}
+button{width:100%;padding:14px;background:#00acc1;color:white;border:none;border-radius:12px;font-size:17px;font-weight:bold}
+#chatScreen{display:none;height:100vh;width:100%;background:#e0f7fa}
+</style>
+</head>
+<body>
+<div class="card" id="login">
+<h1>💙 Love Chat</h1>
+<input id="nick" placeholder="الاسم">
+<button onclick="document.getElementById('login').style.display='none';document.body.innerHTML='<h1 style=text-align:center;margin-top:50% >مرحبا '+document.getElementById('nick').value+'</h1>'">دخول</button>
+</div>
+</body>
+</html>
